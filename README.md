@@ -3,6 +3,6 @@
 
 Решаемая задача - поиск и настройка (деплой) наиболее подходящего инструмента для автоматического распознавания текста в таблицах.
 
-Droojba team - frendship allways win! :Р)
+## Droojba team - frendship allways win! :Р)
 
 ![At work](droojba.jpg)
