@@ -1,9 +1,9 @@
 from fastapi import FastAPI, UploadFile
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 import uvicorn
 import argparse
 import os
-from model import process_image
+from model import process_image, Result_Folder
 
 app = FastAPI()
 
@@ -36,7 +36,7 @@ def main():
 
 @app.post("/ocr")
 def process_request(file: UploadFile
-                    #, is_scan: str
+                    , is_scan: str
                     ):
     """
     Обрабатывает POST-запрос с загруженным файлом.
@@ -50,10 +50,17 @@ def process_request(file: UploadFile
 
     # Отправляем изображение на обработку функции process_image
     res = process_image(save_pth
-                        #, is_scan
+                        , is_scan
                         )
+    
+        # Отправляем изображение на обработку функции process_image
 
-    return {"filename": file.filename, "info": res}
+    csv_filename = list(res.keys())[0]  # Получаем имя CSV файла
+    csv_path = os.path.join(Result_Folder, csv_filename)  # Полный путь к CSV файлу
+
+    return FileResponse(csv_path, media_type="text/csv", filename=csv_filename)
+
+    #return {"filename": file.filename, "info": res}
 
 
 if __name__ == "__main__":

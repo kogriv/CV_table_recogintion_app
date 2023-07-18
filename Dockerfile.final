@@ -11,5 +11,8 @@ RUN pip install -r requirements.txt
 
 # Создание папки для хранения временных фалов
 RUN mkdir -p /tmp/slices_folder
+# Создание папки для хранения результатов
+RUN mkdir -p /tmp/result_folder
+
 
 CMD ["python", "app.py"]
