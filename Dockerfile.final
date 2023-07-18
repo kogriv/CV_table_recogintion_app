@@ -1,0 +1,15 @@
+# Stage 1: Установка неизменяемых зависимостей
+# Stage 2: Добавление изменяемых частей
+FROM ocr_5_base:1.0 as base
+
+# Копирование изменяемых файлов и зависимостей из requirements_new.txt
+COPY requirements_new.txt /app/requirements.txt
+COPY src /app
+
+# Сборка конечного образа с изменяемыми частями
+RUN pip install -r requirements.txt
+
+# Создание папки для хранения временных фалов
+RUN mkdir -p /tmp/slices_folder
+
+CMD ["python", "app.py"]

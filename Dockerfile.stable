@@ -1,0 +1,33 @@
+# Stage 1: Установка неизменяемых зависимостей
+FROM python:3.9 as base
+
+# Установка дополнительных пакетов Tesseract OCR
+RUN apt-get update && apt-get install -y tesseract-ocr tesseract-ocr-rus
+
+# Копирование и установка неизменяемых зависимостей из requirements_stable.txt
+COPY requirements_stable.txt /app/requirements.txt
+WORKDIR /app
+RUN pip install -r requirements.txt
+
+# Stage 2: Добавление изменяемых частей
+FROM base as final
+
+# Копирование изменяемых файлов и зависимостей из requirements_new.txt
+COPY requirements_new.txt /app/requirements.txt
+COPY src/app.py /app/app.py
+COPY src/class.py /app/class.py
+COPY src/model.py /app/model.py
+
+# Сборка конечного образа с изменяемыми частями
+RUN pip install -r requirements.txt
+
+# Stage 1: Установка неизменяемых зависимостей
+FROM python:3.9 as base
+
+# Установка дополнительных пакетов Tesseract OCR и libGL.so.1
+RUN apt-get update && apt-get install -y tesseract-ocr tesseract-ocr-rus libgl1-mesa-glx
+
+# Копирование и установка неизменяемых зависимостей из requirements_stable.txt
+COPY requirements_stable.txt /app/requirements.txt
+WORKDIR /app
+RUN pip install -r requirements.txt
