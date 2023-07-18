@@ -333,3 +333,180 @@ for row in rows:
 
 ## Форматирование результата распознания
 
+Форматирование нашего результата началось с фультрации данных, попавших в таблицу. Были удалены ошибки тессеракта и все элементы, которые нам не подходили.
+
+```ruby
+def delete_redundant_elements(table, iter=5):
+
+    filtered_table = table.copy()
+
+    for _ in range(iter):
+
+        for row in filtered_table:
+
+            for item in row:
+                if (len(item) < 6) or (len(item) > 12):
+                    row.remove(item)
+
+    return filtered_table
+
+
+def get_max_row_lenght(table):
+
+    max = 0
+
+    for row in table:
+        if len(row) > max:
+            max = len(row)
+
+    return max
+
+
+def delete_redundant_rows(table, iter=3):
+
+    filtered_table = table.copy()
+    max = get_max_row_lenght(table)
+
+    for _ in range(iter):
+        for row in filtered_table:
+            if (len(row) <= max / 3) or (len(row) <= 2):
+                filtered_table.remove(row)
+
+    return filtered_table
+
+
+def split_don_type(table):
+
+    filtered_table = []
+
+    for row in table:
+        filtered_table.append(
+            [splitted_item for item in row for splitted_item in item.split()]
+            )
+
+    return filtered_table
+
+
+def split_long_row(table):
+
+    updated_table = []
+
+    for row in table:
+        if len(row) > 10:
+            half_length = len(row) // 2
+            updated_table.append(row[:half_length])
+            updated_table.append(row[half_length:])
+        else:
+            updated_table.append(row)
+
+    return updated_table
+
+
+def change_values(value: str, values: dict) -> str:
+    if value in values.keys():
+        return values[value]
+    else:
+        return value
+
+
+def raw_table_filter(raw_pred):
+    filtered_table = delete_redundant_elements(raw_pred)
+    filtered_table = delete_redundant_rows(filtered_table)
+    filtered_table = split_don_type(filtered_table)
+
+    return filtered_table
+```
+
+Далее было необходимо расположить полученные данные в правильном порядке, не перепутав ячейки, так как могут распознаться не все элементы
+
+```ruby
+max_len = 0
+for row in filtered_table:
+    if len(row) > max_len:
+        max_len = len(row)
+row_len = 3
+new_table = []
+for i in range(len(filtered_table) * int(max_len / 3)):
+    new_row = [0 for _ in range(row_len)]
+    new_table.append(new_row)
+counter = 0
+row_counter = 0
+if max_len == 8:
+    max_len += 1
+
+for i in range(len(filtered_table)):
+
+    if max_len == 6:
+        pass
+    elif max_len == 9 and new_table[row_counter][2] == 0 and new_table[row_counter].count(0) < 3:
+        row_counter += 0
+    elif max_len == 9 and new_table[row_counter].count(0) == 3:
+        if row_counter % 3 == 1:
+            row_counter += 2
+        elif row_counter % 3 == 2:
+            row_counter += 1
+    for j in range(len(filtered_table[i])):
+        counter = 0
+        try:
+            datetime_object = pd.to_datetime(filtered_table[i][j].strip('.'), format='%d.%m.%Y')
+            try:
+                if new_table[row_counter - 1][2] == 0 and row_counter != 0:
+                    row_counter += 1
+            except:
+                pass
+            if new_table[row_counter][counter] != 0:
+                row_counter += 1
+            new_table[row_counter][counter] = filtered_table[i][j].strip('.')
+            continue
+
+        except:
+            counter += 1
+
+        if filtered_table[i][j] in don_type.keys():
+            if new_table[row_counter][counter] != 0:
+                row_counter += 1
+            new_table[row_counter][counter] = change_values(filtered_table[i][j])
+            continue
+        else:
+            counter += 1
+
+        if filtered_table[i][j] in pay_type.keys():
+            new_table[row_counter][counter] = change_values(filtered_table[i][j])
+            row_counter += 1
+            continue
+        else:
+            counter += 1
+
+new_table = pd.DataFrame(new_table, columns =  ['Дата донации', 'Класс крови', 'Тип донации'])
+```
+
+На выходе мы получаем следующую таблицу:
+![photo_2023-07-17_21-07-11](https://github.com/kogriv/droo/assets/124534158/058887b6-128a-48b1-bff8-54d87e28c8a8)
+
+## Оценка accuracy
+
+Для расчета ячеек мы решили оценивать и расположение, и правильно разпознания каждой ячейки.
+```ruby
+def accuracy_score(table_pred, table_true):
+    print(table_pred.shape, table_true.shape)
+    if table_pred.shape == table_true.shape:
+
+        rows = int(table_pred.shape[0])
+        cols = int(table_pred.shape[1])
+        total = rows * cols
+        correct = 0
+
+        for row in range(rows):
+            for col in range(cols):
+                if table_pred.iloc[row, col] == table_true.iloc[row, col]:
+                    correct += 1
+                else:
+                    continue
+
+        return correct / total
+
+    else:
+        print('Shapes of table_pred and table_true does not match!')
+
+Средняя точность = 0.86 = 87%
+```
