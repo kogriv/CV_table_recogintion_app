@@ -6,6 +6,10 @@
 
 ## Создание и запуcк контейнера:
 
+docker build -t ocr_5_base:1.0 -f Dockerfile.stable .
+
+docker build -t ocr_5_model:1.0 -f Dockerfile.final .
+
 docker run -d -p 8010:8000 --name ocr ocr_5_model:1.0
 
 ## Пример подключения к сервису приложения в контейнере
