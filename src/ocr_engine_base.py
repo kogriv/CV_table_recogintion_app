@@ -26,8 +26,6 @@ class table_extractor:
         self.pic_type = pic_type
         self.file_path = file_path
         self.slices_folder = slices_folder
-        self.box = None  # Добавленная строка
-
 
     def extract(self):
         self.read_image()
@@ -49,8 +47,8 @@ class table_extractor:
         self.processor = DetrImageProcessor.from_pretrained('TahaDouaji/detr-doc-table-detection')
         self.model = DetrForObjectDetection.from_pretrained('TahaDouaji/detr-doc-table-detection')
 
-        self.inputs = self.processor(images=self.image, return_tensors="pt")
-        self.outputs = self.model(**self.inputs)
+        self.inputs = processor(images=self.image, return_tensors="pt")
+        self.outputs = model(**self.inputs)
 
         # конвертим outputs (ограничивающие рамки и логиты классов) к COCO API
         # оставим только обнаружения с оценкой > 0.9
@@ -58,7 +56,7 @@ class table_extractor:
         self.results = self.processor.post_process_object_detection(self.outputs, target_sizes=self.target_sizes, threshold=0.8)[0]
 
         for score, label, box in zip(self.results["scores"], self.results["labels"], self.results["boxes"]):
-            self.box = [round(i, 2) for i in box.tolist()]
+            self.box = [round(i, 2) for i in self.box.tolist()]
             print(
                     f"Detected {self.model.config.id2label[label.item()]} with confidence "
                     f"{round(score.item(), 3)} at location {self.box}"
@@ -140,7 +138,7 @@ class table_extractor:
         matrix = cv2.getPerspectiveTransform(pts1, pts2)
 
         self.perspective_corrected_image = cv2.warpPerspective(self.dilated_image, matrix, (self.new_image_width, self.new_image_height))
-        self.perspective_corrected_orig_image = cv2.warpPerspective(self.np_image, matrix, (self.new_image_width, self.new_image_height))
+        self.perspective_corrected_orig_image = cv2.warpPerspective(self.np_image, matrix, (self.ew_image_width, self.new_image_height))
 
     def delete_lines(self):
         hor = np.array([[1,1,1,1,1,1]])
@@ -244,26 +242,24 @@ class table_extractor:
                 x, y, w, h = bounding_box
                 # y = y - 5
                 cropped_image = self.perspective_corrected_orig_image[y:y+h, x:x+w]
-                image_slice_path = self.slices_folder + 'img_' + str(image_number) + '.jpg'
+                image_slice_path = SLICES_FOLDER + 'img_' + str(image_number) + '.jpg'
                 cv2.imwrite(image_slice_path, cropped_image)
-                results_from_ocr = self.get_result_from_tersseract(image_slice_path
-                                                                  # , ocr_settings
-                                                                   )
+                results_from_ocr = self.get_result_from_tersseract(image_slice_path, ocr_settings)
                 current_row.append(results_from_ocr)
                 image_number += 1
             self.table.append(current_row)
             current_row = []
 
-    def order_points(self, pts):
-                pts = pts.reshape(4, 2)
-                rect = np.zeros((4, 2), dtype="float32")
-                s = pts.sum(axis=1)
-                rect[0] = pts[np.argmin(s)]
-                rect[2] = pts[np.argmax(s)]
-                diff = np.diff(pts, axis=1)
-                rect[1] = pts[np.argmin(diff)]
-                rect[3] = pts[np.argmax(diff)]
-                return rect
+def order_points(self, pts):
+            pts = pts.reshape(4, 2)
+            rect = np.zeros((4, 2), dtype="float32")
+            s = pts.sum(axis=1)
+            rect[0] = pts[np.argmin(s)]
+            rect[2] = pts[np.argmax(s)]
+            diff = np.diff(pts, axis=1)
+            rect[1] = pts[np.argmin(diff)]
+            rect[3] = pts[np.argmax(diff)]
+            return rect
 
     def calculateDistanceBetween2Points(self, p1, p2):
             dis = ((p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2) ** 0.5
