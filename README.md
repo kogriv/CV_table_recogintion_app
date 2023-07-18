@@ -508,5 +508,5 @@ def accuracy_score(table_pred, table_true):
     else:
         print('Shapes of table_pred and table_true does not match!')
 
-__Средняя точность = 0.86 = 87%__
+Средняя точность = 0.86 = 87%
 ```
